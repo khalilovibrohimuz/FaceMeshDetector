@@ -23,6 +23,9 @@ class FaceMeshView(context: Context, attrs: AttributeSet?) : View(context, attrs
 
     private var w = 0
     private var h = 0
+    private val scale = 1
+
+    private var prevMode = PrevMode.HALF_BLACK
     private var bitmap: Bitmap
     private var points: List<FaceMeshPoint> = emptyList()
     private var triangles: List<Triangle<FaceMeshPoint>> = emptyList()
@@ -31,7 +34,7 @@ class FaceMeshView(context: Context, attrs: AttributeSet?) : View(context, attrs
         style = Paint.Style.FILL
     }
     private val linePaint = Paint().apply {
-        strokeWidth = 0.1f
+        strokeWidth = 0.2f
         color = Color.WHITE
         style = Paint.Style.STROKE
     }
@@ -64,7 +67,9 @@ class FaceMeshView(context: Context, attrs: AttributeSet?) : View(context, attrs
         this.points = emptyList()
         this.triangles = emptyList()
 
-        detector.process(InputImage.fromBitmap(this.bitmap, 0))
+        val scaledBitmap = Bitmap.createScaledBitmap(this.bitmap, this.bitmap.width / scale, this.bitmap.height / scale, true)
+
+        detector.process(InputImage.fromBitmap(scaledBitmap, 0))
             .addOnSuccessListener { faces ->
                 for (face in faces) {
                     this.points = face.allPoints
@@ -78,21 +83,41 @@ class FaceMeshView(context: Context, attrs: AttributeSet?) : View(context, attrs
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        if (prevMode == PrevMode.BITMAP) canvas.drawBitmap(bitmap, 0.0f, 0.0f, null)
+        if (prevMode == PrevMode.BLACK) canvas.drawColor(Color.BLACK)
+        if (prevMode == PrevMode.GRAY) canvas.drawColor(Color.DKGRAY)
+        if (prevMode == PrevMode.BLUE) canvas.drawColor(Color.BLUE)
+        if (prevMode == PrevMode.HALF_BLACK) canvas.drawColor(Color.argb(240, 0, 0, 0))
+
         val left = (width - bitmap.width) / 2f
         val top = (height - bitmap.height) / 2f
-        canvas.drawBitmap(bitmap, left, top, null)
-        for (point in points) canvas.drawCircle(point.position.x + left, point.position.y + top, 1.6f, paint)
+        for (point in points) canvas.drawCircle(point.position.x * scale + left, point.position.y * scale + top, 3.0f, paint)
         for (triangle in triangles) {
             val points = triangle.allPoints
             if (points.size == 3) {
                 val path = Path().apply {
-                    moveTo(points[0].position.x + left, points[0].position.y + top)
-                    lineTo(points[1].position.x + left, points[1].position.y + top)
-                    lineTo(points[2].position.x + left, points[2].position.y + top)
+                    moveTo(points[0].position.x * scale + left, points[0].position.y * scale + top)
+                    lineTo(points[1].position.x * scale + left, points[1].position.y * scale + top)
+                    lineTo(points[2].position.x * scale + left, points[2].position.y * scale + top)
                     close()
                 }
                 canvas.drawPath(path, linePaint)
             }
+        }
+    }
+
+    fun setPrevMode(prevMode: PrevMode) {
+        this.prevMode = prevMode
+    }
+
+    companion object {
+        enum class PrevMode {
+            BITMAP,
+            BLACK,
+            GRAY,
+            BLUE,
+            HALF_BLACK,
+            TRANSPARENT
         }
     }
 }

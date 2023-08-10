@@ -25,14 +25,14 @@ class CameraView(context: Context, attrs: AttributeSet?) : FrameLayout(context, 
     private lateinit var context: AppCompatActivity
 
     private val preview = PreviewView(context, attrs)
-    private val faceMeshView = FaceMeshView(context, attrs)
+    val faceMeshView = FaceMeshView(context, attrs)
 
+    private var isFrontCamera = true
     private var cameraExecutor: ExecutorService
 
     init {
         addView(preview)
         addView(faceMeshView)
-        preview.alpha = 0.1f
         preview.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         faceMeshView.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
 
@@ -46,6 +46,11 @@ class CameraView(context: Context, attrs: AttributeSet?) : FrameLayout(context, 
     fun setActivity(activity: AppCompatActivity) {
         this.context = activity
         if (allPermissionsGranted()) startCamera() else requestPermissions()
+    }
+
+    fun switchCamera() {
+        isFrontCamera = !isFrontCamera
+        startCamera()
     }
 
     fun allPermissionsGranted() = ActivityFaceMeshCamera.REQUIRED_PERMISSIONS.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
@@ -64,7 +69,7 @@ class CameraView(context: Context, attrs: AttributeSet?) : FrameLayout(context, 
                     imageProxy.close()
                 }
             }
-            val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+            val cameraSelector = if (isFrontCamera) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(context, cameraSelector, preview, imageAnalysis)
