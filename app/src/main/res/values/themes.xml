@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.FaceMeshDetector" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:statusBarColor">#000C18</item>
+        <item name="android:navigationBarColor">#000C18</item>
+    </style>
+</resources>
